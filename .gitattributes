@@ -1,5 +1,4 @@
 * text eol=lf
-
 # source code
 *.php text
 *.css text
@@ -24,7 +23,6 @@
 *.sql text
 *.sh text
 *.bat text
-
 # templates
 *.ejs text
 *.hbt text
@@ -34,44 +32,34 @@
 *.dot text
 *.tmpl text
 *.phtml text
-
 # server config
 .htaccess text
-
 # git config
 .gitattributes text
 .gitignore text
 .gitconfig text
-
 # code analysis config
 .jshintrc text
 .jscsrc text
 .jshintignore text
 .csslintrc text
-
 # misc config
 *.yaml text
 *.yml text
 .editorconfig text
-
 # build config
 *.npmignore text
 *.bowerrc text
-
 # Heroku
 Procfile text
 .slugignore text
-
 # Documentation
 *.md text
 LICENSE text
 AUTHORS text
-
-
 #
 ## These files are binary and should be left untouched
 #
-
 # (binary is a macro for -text -diff)
 *.png binary
 *.jpg binary
@@ -92,3 +80,5 @@ AUTHORS text
 *.woff binary
 *.pyc binary
 *.pdf binary
+builds filter=lfs diff=lfs merge=lfs -text
+release-builds filter=lfs diff=lfs merge=lfs -text
