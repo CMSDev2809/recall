@@ -1,0 +1,61 @@
+{
+  "name": "Recall",
+  "productName": "Recall",
+  "version": "0.1.0",
+  "main": "main.js",
+  "author": "Broc Roberts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pbarbiero/basic-electron-react-boilerplate.git"
+  },
+  "scripts": {
+    "dev": "webpack-dev-server --hot --host 0.0.0.0 --config=./webpack.dev.config.js",
+    "prod": "webpack --progress --config webpack.build.config.js && electron --noDevServer .",
+    "build": "webpack --progress --config webpack.build.config.js",
+    "package": "webpack --config webpack.build.config.js",
+    "postpackage": "electron-packager ./ --out=./builds",
+    "scaffold": "node ./scaffold/scaffold.js",
+    "postinstall": "cd ./scaffold && npm install",
+    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/atom.icns --prune=true --out=release-builds",
+    "package-win": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Recall\"",
+    "package-linux": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-preset-react": "^6.23.0",
+    "babili-webpack-plugin": "^0.1.2",
+    "connected-react-router": "^4.0.0-beta.4",
+    "css-loader": "^0.26.2",
+    "deep-equal": "^1.0.1",
+    "electron": "^1.7.8",
+    "electron-packager": "^8.1.0",
+    "electron-json-config": "^1.4.0",
+    "extract-text-webpack-plugin": "^3.0.1",
+    "file-loader": "^1.1.5",
+    "html-webpack-plugin": "^2.28.0",
+    "less": "^2.7.2",
+    "less-loader": "^2.2.3",
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "react-hot-loader": "^3.0.0-beta.6",
+    "react-redux": "^5.0.3",
+    "react-router-dom": "^4.0.0-beta.7",
+    "redux": "^3.6.0",
+    "redux-logger": "^2.8.2",
+    "style-loader": "^0.19.0",
+    "webpack": "^3.6.0",
+    "webpack-dev-server": "^2.4.5"
+  },
+  "dependencies": {
+    "base-64": "^0.1.0",
+    "cryptr": "^4.0.0",
+    "electron-packager": "^12.1.0",
+    "react-spinners": "^0.4.5",
+    "react-to-print": "^2.0.0-alpha-3",
+    "update-electron-app": "^1.3.0"
+  }
+}
