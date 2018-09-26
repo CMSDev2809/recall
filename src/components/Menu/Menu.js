@@ -20,7 +20,7 @@ class Menu extends Component {
     let token = "";
     let access = 5;
     try {
-      token = await fns.readToken().catch(res => console.log("dfdfdf"));
+      token = await fns.readToken().catch(res => console.log("no token"));
       access = await fns.getUserAccess(token);
     } catch (err) {}
     this.setState({
@@ -89,7 +89,7 @@ const MenuRow = props => {
 const Menu_mapStateToProps = state => {
   return {
     ...state,
-    username: state.Home.username
+    username: state.Home.usernam
   };
 };
 const Menu_mapDispatchToProps = dispatch => {

@@ -57,12 +57,20 @@ module.exports = {
     });
   },
   readFromSave: async () => {
-    const obj = await new Promise((resolve, reject) => {
-      fs.readFile("save", "utf-8", (err, data) => {
-        err ? reject(err) : resolve(JSON.parse(data));
+    if (fs.existsSync("save")) {
+      const obj = await new Promise((resolve, reject) => {
+        fs.readFile("save", "utf-8", (err, data) => {
+          err ? reject(err) : resolve(JSON.parse(data));
+        });
+      }).then(res => res);
+      return obj;
+    } else {
+      module.exports.writeToSave({
+        db: "",
+        port: ""
       });
-    }).then(res => res);
-    return obj;
+      return module.exports.readFromSave();
+    }
   },
   ping: async () => {
     const location = await module.exports.readFromSave().then(res => res.db);

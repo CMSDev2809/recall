@@ -10,16 +10,21 @@
     "url": "https://github.com/pbarbiero/basic-electron-react-boilerplate.git"
   },
   "scripts": {
-    "dev": "webpack-dev-server --hot --host 0.0.0.0 --config=./webpack.dev.config.js",
-    "prod": "webpack --progress --config webpack.build.config.js && electron --noDevServer .",
+    "dev":
+      "webpack-dev-server --hot --host 0.0.0.0 --config=./webpack.dev.config.js",
+    "prod":
+      "webpack --progress --config webpack.build.config.js && electron --noDevServer .",
     "build": "webpack --progress --config webpack.build.config.js",
     "package": "webpack --config webpack.build.config.js",
     "postpackage": "electron-packager ./ --out=./builds",
     "scaffold": "node ./scaffold/scaffold.js",
     "postinstall": "cd ./scaffold && npm install",
-    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/atom.icns --prune=true --out=release-builds",
-    "package-win": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Recall\"",
-    "package-linux": "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds"
+    "package-mac":
+      "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/atom.icns --prune=true --out=release-builds",
+    "package-win":
+      "electron-packager . Recall --overwrite --asar=true --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Recall\"",
+    "package-linux":
+      "electron-packager . electron-tutorial-app --overwrite --asar=true --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
