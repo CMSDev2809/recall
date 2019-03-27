@@ -82,3 +82,4 @@ AUTHORS text
 *.pdf binary
 builds filter=lfs diff=lfs merge=lfs -text
 release-builds filter=lfs diff=lfs merge=lfs -text
+. filter=lfs diff=lfs merge=lfs -text
