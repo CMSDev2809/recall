@@ -23,6 +23,6 @@ Your back end server should now be up and running!
 - Step 1: Download installer [here](https://github.com/CMSDev2809/recall/releases/latest) titled 'Recall-Setup-latest.exe
 ' where latest is the current version number.
 - Step 2: Run installer.
-- Step 3: Once Recall has opened navigate to the 'Settings' option beneath the Navigation column and input the address & port number on which your server is running.
+- Step 3: Once Recall has opened navigate to the 'Settings' option beneath the Navigation column and input the address & port number on which your server is running. Note that 
 
 Recall should now be installed on your system! Recall automatically checks for updates on github on every startup and will automatically download and install them.
