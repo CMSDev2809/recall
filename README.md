@@ -3,6 +3,7 @@
 
 Recall is a Windows program used to store encrypted client financial card data on a secure server. This project is uses the Electron boilerplate 'enhanced-electron-react-boilerplate' by Phillip Barbiero found [here](https://github.com/pbarbiero/enhanced-electron-react-boilerplate). Project styling uses 'Photon' found [here](http://photonkit.com).
 
+## Screenshots
 ![Screenshot](recall.png)
 ![Screenshot](recall_1.png)
 ![Screenshot](recall_2.png)
