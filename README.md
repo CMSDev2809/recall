@@ -9,7 +9,7 @@ Program used to assist in client financial card data.
 
 ## Usage
 - Step 1: Download installer [here](https://github.com/CMSDev2809/recall/releases/latest) titled 'Recall-Setup-latest.exe
-'.
+' where latest is the current version number.
 - Step 2: Run installer.
 
 Recall should now be installed on your system!
