@@ -13,7 +13,12 @@ class Settings extends Component {
     super(props);
     this.state = {
       directoryPath: "",
-      port: ""
+      port: "",
+      limit: 10,
+      printLayout: 0,
+      placeHolderText: 0,
+      contactEmail: "",
+      receiptEmail: 0
     };
   }
 
@@ -21,7 +26,12 @@ class Settings extends Component {
     const settings = await fns.readFromSave();
     this.setState({
       directoryPath: settings.db,
-      port: settings.port
+      port: settings.port,
+      limit: parseInt(settings.limit),
+      printLayout: settings.printLayout,
+      placeHolderText: settings.placeHolderText,
+      contactEmail: settings.contactEmail,
+      receiptEmail: parseInt(settings.receiptEmail)
     });
   }
 
@@ -29,7 +39,12 @@ class Settings extends Component {
     if (window.confirm("Save new settings?")) {
       fns.writeToSave({
         db: this.state.directoryPath,
-        port: this.state.port
+        port: this.state.port,
+        limit: this.state.limit,
+        printLayout: this.state.printLayout,
+        placeHolderText: this.state.placeHolderText,
+        contactEmail: this.state.contactEmail,
+        receiptEmail: this.state.receiptEmail
       });
     }
   }
@@ -78,6 +93,97 @@ class Settings extends Component {
               </div>
             </div>
           </div>
+          <div className="padded">
+            <label>Enable Receipt Email</label>
+            <div>
+              <select
+                value={parseInt(this.state.receiptEmail)}
+                class="form-control"
+                onChange={e => {
+                  this.setState({
+                    receiptEmail: e.target.value
+                  });
+                }}
+              >
+                <option value={0}>False</option>
+                <option value={1}>True</option>
+              </select>
+            </div>
+          </div>
+          {this.state.receiptEmail > 0 ? (
+            <div className="padded">
+              <label>Receipt Email</label>
+              <div>
+                <div className="db">
+                  <div style={{ marginRight: "12.5px", width: "75%" }}>
+                    <input
+                      label="Database Directory"
+                      type="text"
+                      className="form-control"
+                      placeholder=""
+                      value={this.state.contactEmail}
+                      onChange={e =>
+                        this.setState({ contactEmail: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <div className="padded">
+            <label>Print Layout</label>
+            <div>
+              <select
+                value={parseInt(this.state.printLayout)}
+                class="form-control"
+                onChange={e => {
+                  this.setState({
+                    printLayout: e.target.value
+                  });
+                }}
+              >
+                <option value={0}>Single</option>
+                <option value={1}>Multiple</option>
+              </select>
+            </div>
+          </div>
+          <div className="padded">
+            <label>Show Placeholder Text</label>
+            <div>
+              <select
+                value={parseInt(this.state.placeHolderText)}
+                class="form-control"
+                onChange={e => {
+                  this.setState({
+                    placeHolderText: e.target.value
+                  });
+                }}
+              >
+                <option value={0}>False</option>
+                <option value={1}>True</option>
+              </select>
+            </div>
+          </div>
+          <div className="padded">
+            <label>Pagination Limit</label>
+            <div>
+              <div className="db">
+                <div style={{ marginRight: "12.5px", width: "75%" }}>
+                  <input
+                    label="Pagination Limit"
+                    type="text"
+                    className="form-control"
+                    placeholder=""
+                    value={this.state.limit}
+                    onChange={e =>
+                      this.setState({
+                        limit: e.target.value
+                      })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="buttons">
           <button
@@ -99,8 +205,12 @@ class Settings extends Component {
   }
 }
 
-const Settings_mapStateToProps = state => {};
-const Settings_mapDispatchToProps = dispatch => {};
+const Settings_mapStateToProps = state => {
+  return {};
+};
+const Settings_mapDispatchToProps = dispatch => {
+  return {};
+};
 
 Settings = connect(Settings_mapStateToProps, Settings_mapDispatchToProps)(
   Settings

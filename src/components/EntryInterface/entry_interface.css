@@ -5,6 +5,10 @@
 .icon {
   font-size: 50px;
 }
+.icon-priority {
+  font-size: 50px;
+  color: rgb(156, 42, 44);
+}
 .icon-checkmark {
   color: rgb(0, 218, 159);
 }
@@ -48,7 +52,7 @@
     rgb(194, 194, 194)
   );
 }
-.client_name_row {
+.squish_row {
   display: flex;
   width: 100%;
 }
@@ -56,6 +60,10 @@
   float: right;
   margin-right: 25px;
   color: rgb(163, 10, 0);
+}
+.drop_down_block {
+}
+.drop_down_block .element {
 }
 .cancel-button {
   position: absolute;
@@ -68,4 +76,10 @@
 .cancel-button h1 {
   font-size: 35px;
   color: rgb(159, 0, 0);
+}
+.prev-next {
+  float: right;
+}
+button {
+  margin: 5px;
 }

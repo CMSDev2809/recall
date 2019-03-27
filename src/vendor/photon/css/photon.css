@@ -681,13 +681,13 @@ input[type="checkbox"] {
   font-size: 13px;
   line-height: 1.6;
   background-color: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid rgb(185, 185, 185);
   border-radius: 4px;
   outline: none;
 }
 .form-control:focus {
-  border-color: #6db3fd;
-  box-shadow: 0 0 0 3px #6db3fd;
+  border-color: rgb(9, 160, 235);
+  box-shadow: 0 0 0 1px #6db3fd;
 }
 
 textarea {

@@ -4,8 +4,10 @@ import config from "electron-json-config";
 import { Prompt, Link } from "react-router-dom";
 import * as deepEqual from "deep-equal";
 import { TextInput, SelectBox, resetUID } from "../inputs.js";
+import { components, history, store } from "../components.js";
 import { actions } from "./component.js";
-import ReactToPrint from "react-to-print";
+import dropDownStateOptions from "./drop_down_state_options";
+import dropDownCityOptions from "./cities/router";
 import "./entry_interface.css";
 
 import fns from "../../fns";
@@ -16,7 +18,8 @@ class EntryInterface extends Component {
     this.state = {
       activePane: "search",
       activeClient: "",
-      editorState: {}
+      editorState: {},
+      placeholder: 0
     };
   }
 
@@ -27,6 +30,10 @@ class EntryInterface extends Component {
         this.props.sendCard
       );
     }
+    (async () => {
+      const placeholder = await fns.readFromSave();
+      this.setState({ placeholder: parseInt(placeholder.placeHolderText) });
+    })();
   }
 
   setEditorState(activePane, editorState) {
@@ -40,7 +47,6 @@ class EntryInterface extends Component {
         : { opacity: "0.35", pointerEvents: "none" };
     return (
       <div>
-        <Printer />
         <header class="toolbar toolbar-header">
           <div className="toolbar-actions">
             <div className="btn-group">
@@ -61,6 +67,7 @@ class EntryInterface extends Component {
         </header>
         {this.state.activePane === "editor" ? (
           <CardEditor
+            placeholder={this.state.placeholder}
             setEditorState={(activePane, editorState) =>
               this.setEditorState(activePane, editorState)}
             editorState={this.state.editorState}
@@ -68,8 +75,10 @@ class EntryInterface extends Component {
           />
         ) : this.state.activePane === "editor-new" ? (
           <CardEditor
+            placeholder={this.state.placeholder}
             setEditorState={(activePane, editorState) =>
               this.setEditorState(activePane, editorState)}
+            history={this.props}
           />
         ) : (
           <Search
@@ -82,13 +91,39 @@ class EntryInterface extends Component {
   }
 }
 
+class Pagination extends Component {
+  render() {
+    return (
+      <p>
+        {this.props.totalSize > 0
+          ? `Displaying results ${this.props.searchIndex + 1} -
+              ${this.props.searchIndex + this.props.limit > this.props.totalSize
+                ? this.props.totalSize
+                : this.props.searchIndex + this.props.limit} of ${this.props
+              .totalSize}`
+          : ``}
+      </p>
+    );
+  }
+}
+
 class Search extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      lastButton: 0,
       hits: [],
-      textInput: ""
+      textInput: "",
+      searchIndex: 0,
+      totalSize: 0,
+      limit: 0
     };
+  }
+
+  componentDidMount() {
+    fns
+      .readFromSave()
+      .then(res => this.setState({ limit: parseInt(res.limit) }));
   }
 
   async deleteCard(id) {
@@ -103,69 +138,85 @@ class Search extends Component {
     this.props.setEditorState("editor", card);
   }
 
-  async find(query) {
-    let hits = await fns.getCards(query);
-    hits = hits.map(element => {
-      const card = fns.decryptCard(element);
-      return (
-        <li className="list-group-item" style={{ position: "relative" }}>
-          <div
-            className={
-              card.processing.length > 0 ? "list_item-void" : "list_item"
-            }
-            onClick={() =>
-              card.processing.length > 0 ? null : this.selectCard(card)}
-          >
-            <span className="icon icon-user pull-left" />
-            <div className="media-body">
-              <div style={{ float: "right" }}>
-                <h2>
-                  {card.cardNumber[card.cardNumber.length - 1]}
-                  {card.cardNumber[card.cardNumber.length - 2]}
-                  {card.cardNumber[card.cardNumber.length - 3]}
-                  {card.cardNumber[card.cardNumber.length - 4]}
-                </h2>
-                <p style={{ float: "right" }}>{card.securityCode}</p>
-              </div>
-              {card.processing.length > 0 ? (
-                <div className={"exclemation"}>
-                  <span className="icon icon-key" />
+  async find(chrono) {
+    const hits = await fns.getCards(
+      this.state.textInput,
+      this.state.searchIndex,
+      chrono
+    );
+    const totalSize = hits.totalSize;
+    const cards = await Promise.all(
+      hits.cards.map(async element => {
+        const card = await fns.decryptCard(element);
+        return (
+          <li className="list-group-item" style={{ position: "relative" }}>
+            <div
+              className={
+                card.processing.length > 0 ? "list_item-void" : "list_item"
+              }
+              onClick={() =>
+                card.processing.length > 0 ? null : this.selectCard(card)}
+            >
+              <span className="icon icon-user pull-left" />
+              <div className="media-body">
+                <div style={{ float: "right" }}>
+                  <h2>{card.cardNumber.slice(-4)}</h2>
+                  <p style={{ float: "right" }}>{card.securityCode}</p>
+                  {card.lastAccess ? (
+                    <p style={{ float: "right" }}>{card.lastAccess}</p>
+                  ) : null}
                 </div>
-              ) : null}
-              <div style={{ display: "inline-flex" }}>
-                <div style={{ marginLeft: "25px" }}>
-                  <strong>
-                    {card.lastName}, {card.firstName}
-                  </strong>
-                  <p>Phone Number: {card.phoneNumber}</p>
-                  <p>Address: {card.billingAddress}</p>
-                  <p>{card.billingAddress2}</p>
+                {card.processing.length > 0 ? (
+                  <div className={"exclemation"}>
+                    <span className="icon icon-key" />
+                  </div>
+                ) : null}
+                <div style={{ display: "inline-flex" }}>
+                  <div style={{ marginLeft: "25px" }}>
+                    <strong>
+                      {card.lastName}, {card.firstName}
+                    </strong>
+                    <p>Phone Number: {card.phoneNumber}</p>
+                    <p>Address: {card.billingAddress}</p>
+                    <p>{card.billingAddress2}</p>
+                  </div>
                 </div>
+                {card.processing.length > 0 ? (
+                  <h5 style={{ marginLeft: "25px" }}>
+                    This card has been flagged for processing.
+                  </h5>
+                ) : null}
               </div>
-              {card.processing.length > 0 ? (
-                <h5>This card has been flagged for processing.</h5>
-              ) : null}
             </div>
-          </div>
-          {card.processing.length > 0 ? null : (
-            <div className={"cancel-button"}>
-              <h1
-                className={"icon icon-cancel-squared"}
-                onClick={() => this.deleteCard(card.id)}
-              />
-            </div>
-          )}
-        </li>
-      );
-    });
-    this.setState({ hits });
+            {card.processing.length > 0 ? null : (
+              <div className={"cancel-button"}>
+                <h1
+                  className={"icon icon-cancel-squared"}
+                  onClick={() => this.deleteCard(card.id)}
+                />
+              </div>
+            )}
+          </li>
+        );
+      })
+    );
+    this.setState({ hits: cards, totalSize });
   }
 
   clearFields() {
-    this.setState({ hits: [], textInput: "" });
+    this.setState({
+      hits: [],
+      textInput: "",
+      totalSize: 0,
+      searchIndex: 0
+    });
   }
 
   render() {
+    const transStyle = {
+      opacity: "0.5",
+      pointerEvents: "none"
+    };
     return (
       <div style={{ position: "relative" }}>
         <div
@@ -187,9 +238,21 @@ class Search extends Component {
               />
               <button
                 className="btn btn-large btn-primary"
-                onClick={() => this.find(this.state.textInput)}
+                onClick={() => {
+                  this.setState({ lastButton: 0 });
+                  this.find();
+                }}
               >
                 Search
+              </button>
+              <button
+                className="btn btn-large btn-default"
+                onClick={() => {
+                  this.setState({ lastButton: 1 });
+                  this.find(true);
+                }}
+              >
+                <span className="icon icon-clock" />
               </button>
               <button
                 className="btn btn-large btn-default"
@@ -197,6 +260,40 @@ class Search extends Component {
               >
                 Clear
               </button>
+              <div className={"prev-next"}>
+                <button
+                  className="btn btn-large btn-default"
+                  style={
+                    this.state.searchIndex >= this.state.limit ? {} : transStyle
+                  }
+                  onClick={() => {
+                    this.state.searchIndex -= this.state.limit;
+                    this.find(this.state.lastButton ? true : false);
+                  }}
+                >
+                  Previous
+                </button>
+                <button
+                  className="btn btn-large btn-default"
+                  style={
+                    this.state.searchIndex <
+                    this.state.totalSize - this.state.limit
+                      ? {}
+                      : transStyle
+                  }
+                  onClick={() => {
+                    this.state.searchIndex += this.state.limit;
+                    this.find(this.state.lastButton ? true : false);
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+              <Pagination
+                totalSize={this.state.totalSize}
+                searchIndex={this.state.searchIndex}
+                limit={this.state.limit}
+              />
             </div>
           </div>
         </div>
@@ -216,7 +313,7 @@ class Search extends Component {
 class CardEditor extends Component {
   constructor(props) {
     super(props);
-    this.state = {
+    this.stateObject = {
       id: "",
       firstName: "",
       lastName: "",
@@ -227,36 +324,21 @@ class CardEditor extends Component {
       amount: "",
       billingAddress: "",
       billingAddress2: "",
-      city: "",
-      state: "",
+      city: "Missoula",
+      state: "MT",
       zip: "",
       phoneNumber: "",
       purpose: "",
       notes: "",
-      processing: ""
+      processing: "",
+      contactEmail: "",
+      receiptEmail: 0
     };
+    this.state = this.stateObject;
   }
 
   resetState() {
-    this.setState({
-      id: "",
-      firstName: "",
-      lastName: "",
-      cardNumber: "",
-      expDate: "",
-      cardHolder: "",
-      securityCode: "",
-      amount: "",
-      billingAddress: "",
-      billingAddress2: "",
-      city: "",
-      state: "",
-      zip: "",
-      phoneNumber: "",
-      purpose: "",
-      notes: "",
-      processing: ""
-    });
+    this.setState(this.stateObject);
   }
 
   componentDidMount() {
@@ -278,15 +360,92 @@ class CardEditor extends Component {
         phoneNumber: this.props.editorState.phoneNumber,
         purpose: this.props.editorState.purpose,
         notes: this.props.editorState.notes,
-        processing: this.props.editorState.processing
+        processing: this.props.editorState.processing,
+        lastFour: this.props.lastFour ? this.props.lastFour : "",
+        contactEmail: this.props.editorState.contactEmail
+          ? this.props.editorState.contactEmail
+          : "",
+        receiptEmail: this.props.editorState.receiptEmail
+          ? this.props.editorState.receiptEmail
+          : 0
       });
     } else {
       this.resetState();
     }
   }
 
-  printFn() {
-    return <Printer />;
+  formatExp(str, last) {
+    if (
+      (str.length < 6 && str[str.length - 1] !== "/") ||
+      str.length < last.length
+    ) {
+      if (str.length === 2 && str.length > last.length) {
+        return str + "/";
+      } else {
+        return str;
+      }
+    } else {
+      return last;
+    }
+  }
+
+  formatSecurityCode(str, last) {
+    if (str.length < 5) {
+      return str;
+    } else {
+      return last;
+    }
+  }
+
+  formatTotal(str) {
+    if (str.length > 0 && str[0] !== "$") {
+      return "$" + str;
+    } else {
+      return str;
+    }
+  }
+
+  formatPhone(str, old) {
+    if (str.length > old.length) {
+      if (str.length > 14) {
+        return str.slice(0, -1);
+      } else if (str.length === 3) {
+        return "(" + str + ") ";
+      } else if (str.length === 9) {
+        return str + "-";
+      }
+    }
+    return str;
+  }
+
+  cardValueFormater(str, lastValue) {
+    const comp = str.replace(/ /g, "");
+    if (
+      comp.length > lastValue.replace(/ /g, "").length &&
+      comp.length > 0 &&
+      comp.length < 17 &&
+      (str[0] === "5" || str[0] === "4")
+    ) {
+      if (comp.length % 4 === 0 && comp.length < 16) {
+        return str + " ";
+      } else {
+        return str;
+      }
+    } else if (
+      comp.length > lastValue.replace(/ /g, "").length &&
+      comp.length > 0 &&
+      comp.length < 16 &&
+      str[0] === "3"
+    ) {
+      if (comp.length === 4 || comp.length === 9) {
+        return str + " ";
+      } else {
+        return str;
+      }
+    } else if (comp.length < 17) {
+      return str;
+    }
+    return lastValue;
   }
 
   render() {
@@ -295,50 +454,124 @@ class CardEditor extends Component {
         <div className="content">
           <div className="button_container">
             {this.state.processing.length > 0 ? (
-              <Link to="/tasks">
-                <button
-                  className="button"
-                  onClick={() => {
-                    fns.updateCard(this.state.id, { processing: "" });
-                    this.props.setEditorState("search", {});
-                  }}
-                >
-                  <div className="icon-checkmark">
-                    <div className="icon icon-check" />
-                  </div>
-                  <div>Mark Completed</div>
-                </button>
-              </Link>
-            ) : (
               <button
                 className="button"
                 onClick={() => {
-                  if (
-                    window.confirm(
-                      "This card will only be accessible by admins until processing has finished. Continue?"
-                    )
-                  ) {
-                    fns.updateCard(this.state.id, {
-                      processing: this.props.history.username
-                    });
+                  if (window.confirm("Finish processing and mark completed?")) {
+                    if (
+                      parseInt(this.state.receiptEmail) &&
+                      this.state.contactEmail.length
+                    ) {
+                      fns.sendReceipt(this.state);
+                    }
+                    fns.updateCard(this.state.id, { processing: "" });
                     this.props.setEditorState("search", {});
+                    this.props.history.push("/tasks");
                   }
                 }}
               >
-                <div className="icon">
-                  <div className="icon icon-paper-plane" />
+                <div className="icon-checkmark">
+                  <div className="icon icon-check" />
                 </div>
-                <div>Send to Processing</div>
+                <div>Mark Completed</div>
               </button>
+            ) : (
+              <div>
+                <button
+                  className="button"
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        "This card will only be accessible by admins until processing has finished. Continue?"
+                      )
+                    ) {
+                      let card = this.state;
+                      const settings = await fns.readFromSave();
+                      card["contactEmail"] = settings.contactEmail;
+                      card["receiptEmail"] = settings.receiptEmail;
+                      card = await fns.encryptCard(card);
+                      if (this.props.editorState) {
+                        fns.updateCard(
+                          this.state.id,
+                          Object.assign(card, {
+                            processing: this.props.history.username,
+                            highPriority: false
+                          })
+                        );
+                      } else {
+                        fns.createCard(
+                          Object.assign(card, {
+                            processing: this.props.history.username,
+                            highPriority: false
+                          })
+                        );
+                      }
+                      this.props.setEditorState("search", {});
+                    }
+                  }}
+                >
+                  <div className="icon">
+                    <div className="icon icon-paper-plane" />
+                  </div>
+                  <div>Send to Processing</div>
+                </button>
+                <button
+                  className="button"
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        "This card has been submitted with high priority and will only be accessible by admins until processing has finished. Continue?"
+                      )
+                    ) {
+                      let card = this.state;
+                      const settings = await fns.readFromSave();
+                      card["contactEmail"] = settings.contactEmail;
+                      card["receiptEmail"] = settings.receiptEmail;
+                      card = await fns.encryptCard(card);
+                      if (this.props.editorState) {
+                        fns.updateCard(
+                          this.state.id,
+                          Object.assign(card, {
+                            processing: this.props.history.username,
+                            highPriority: true
+                          })
+                        );
+                      } else {
+                        fns.createCard(
+                          Object.assign(card, {
+                            processing: this.props.history.username,
+                            highPriority: true
+                          })
+                        );
+                      }
+                      fns.highPriority(
+                        Object.assign(this.state, {
+                          requestedBy: this.props.history.username
+                        })
+                      );
+                      this.props.setEditorState("search", {});
+                    }
+                  }}
+                >
+                  <div
+                    className="icon-priority"
+                    style={{ marginBottom: "-15px" }}
+                  >
+                    <div className="icon icon-attention" />
+                  </div>
+                  <div>Send to Processing (High Priority)</div>
+                </button>
+              </div>
             )}
             <button
               className="button"
-              onClick={() => {
+              onClick={async () => {
+                const card = await fns.encryptCard(this.state);
                 if (this.state.id.length > 0) {
-                  fns.updateCard(this.state.id, fns.encryptCard(this.state));
+                  fns.updateCard(this.state.id, card);
                   alert("Card Updated.");
                 } else {
-                  fns.createCard(fns.encryptCard(this.state));
+                  fns.createCard(card);
                   alert("New Card Added");
                   this.props.setEditorState("search", {});
                 }
@@ -349,19 +582,11 @@ class CardEditor extends Component {
               </div>
               <div>Save / Update</div>
             </button>
-            <ReactToPrint
-              trigger={() => (
-                <button className="button">
-                  <div className="icon">
-                    <div className="icon icon-print" />
-                  </div>
-                  <div>Print</div>
-                </button>
-              )}
-              content={() => <h1>Print</h1>}
-            />
-            <Printer ref={() => <h1>test</h1>} />
-            <button className="button" onClick={() => this.resetState()}>
+            <components.Printer data={this.state} />
+            <button
+              className="button"
+              onClick={() => this.resetState(this.stateObject)}
+            >
               <div className="icon">
                 <div className="icon icon-arrows-ccw" />
               </div>
@@ -379,11 +604,11 @@ class CardEditor extends Component {
                 </h1>
               </header>
               <div className="padded">
-                <div className="client_name_row">
-                  <div style={{ marginRight: "25px", width: "50%" }}>
+                <div className="squish_row">
+                  <div style={{ marginRight: "10px", width: "50%" }}>
                     <TextInput
                       label="Client First Name"
-                      placeholder=""
+                      placeholder={this.props.placeholder ? "John" : ""}
                       value={this.state.firstName}
                       onChange={value => {
                         this.setState({ firstName: value });
@@ -393,7 +618,7 @@ class CardEditor extends Component {
                   <div style={{ width: "50%" }}>
                     <TextInput
                       label="Client Last Name"
-                      placeholder=""
+                      placeholder={this.props.placeholder ? "Hancock" : ""}
                       value={this.state.lastName}
                       onChange={value => {
                         this.setState({ lastName: value });
@@ -401,96 +626,210 @@ class CardEditor extends Component {
                     />
                   </div>
                 </div>
-                <TextInput
-                  label="Card Number"
-                  placeholder=""
-                  value={this.state.cardNumber}
-                  onChange={value => {
-                    this.setState({ cardNumber: value });
-                  }}
-                />
-                <TextInput
-                  label="Expiration Date"
-                  placeholder=""
-                  value={this.state.expDate}
-                  onChange={value => {
-                    this.setState({ expDate: value });
-                  }}
-                />
-                <TextInput
-                  label="Cardholder"
-                  placeholder=""
-                  value={this.state.cardHolder}
-                  onChange={value => {
-                    this.setState({ cardHolder: value });
-                  }}
-                />
-                <TextInput
-                  label="Security Code"
-                  placeholder=""
-                  value={this.state.securityCode}
-                  onChange={value => {
-                    this.setState({ securityCode: value });
-                  }}
-                />
-                <TextInput
-                  label="Amount"
-                  placeholder=""
-                  value={this.state.amount}
-                  onChange={value => {
-                    this.setState({ amount: value });
-                  }}
-                />
+                <div className="squish_row">
+                  <div style={{ marginRight: "10px", width: "60%" }}>
+                    <TextInput
+                      label="Card Number"
+                      placeholder={
+                        this.props.placeholder ? "0123 4567 8901 2345" : ""
+                      }
+                      value={this.state.cardNumber}
+                      onChange={value => {
+                        this.setState({
+                          cardNumber: this.cardValueFormater(
+                            value,
+                            this.state.cardNumber
+                          )
+                        });
+                      }}
+                    />
+                  </div>
+                  <div style={{ width: "20%", marginRight: "10px" }}>
+                    <TextInput
+                      label="Expiration Date"
+                      placeholder={this.props.placeholder ? "01/20" : ""}
+                      value={this.state.expDate}
+                      onChange={value => {
+                        this.setState({
+                          expDate: this.formatExp(value, this.state.expDate)
+                        });
+                      }}
+                    />
+                  </div>
+                  <div style={{ width: "20%" }}>
+                    <TextInput
+                      label="Security Code"
+                      placeholder={this.props.placeholder ? "012" : ""}
+                      value={this.state.securityCode}
+                      onChange={value => {
+                        this.setState({
+                          securityCode: this.formatSecurityCode(
+                            value,
+                            this.state.securityCode
+                          )
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="squish_row">
+                  <div style={{ marginRight: "10px", width: "60%" }}>
+                    <TextInput
+                      label="Cardholder"
+                      placeholder={
+                        this.props.placeholder ? "John J Hancock" : ""
+                      }
+                      value={this.state.cardHolder}
+                      onChange={value => {
+                        this.setState({ cardHolder: value });
+                      }}
+                    />
+                  </div>
+                  <div style={{ width: "40%" }}>
+                    <TextInput
+                      label="Amount"
+                      placeholder={this.props.placeholder ? "$300.00" : ""}
+                      value={this.state.amount}
+                      onChange={value => {
+                        this.setState({ amount: this.formatTotal(value) });
+                      }}
+                      onBlur={() =>
+                        this.state.amount.length > 0
+                          ? this.setState({
+                              amount:
+                                "$" +
+                                parseFloat(
+                                  this.state.amount.replace("$", "")
+                                ).toFixed(2)
+                            })
+                          : this.setState({ amount: "" })}
+                    />
+                  </div>
+                </div>
                 <TextInput
                   label="Billing Address"
-                  placeholder=""
+                  placeholder={
+                    this.props.placeholder ? "123 North Pole Ave" : ""
+                  }
                   value={this.state.billingAddress}
                   onChange={value => {
                     this.setState({ billingAddress: value });
                   }}
                 />
                 <TextInput
-                  placeholder=""
+                  placeholder={this.props.placeholder ? "Igloo 5" : ""}
                   value={this.state.billingAddress2}
                   onChange={value => {
                     this.setState({ billingAddress2: value });
                   }}
                 />
-                <TextInput
-                  label="City"
-                  placeholder=""
-                  value={this.state.city}
-                  onChange={value => {
-                    this.setState({ city: value });
-                  }}
-                />
-                <TextInput
-                  label="State"
-                  placeholder=""
-                  value={this.state.state}
-                  onChange={value => {
-                    this.setState({ state: value });
-                  }}
-                />
-                <TextInput
-                  label="Zip Code"
-                  placeholder=""
-                  value={this.state.zip}
-                  onChange={value => {
-                    this.setState({ zip: value });
-                  }}
-                />
+                <div className="squish_row">
+                  <div
+                    style={{
+                      marginRight: "10px",
+                      marginTop: "10px",
+                      width: "60%"
+                    }}
+                  >
+                    <div style={{ marginBottom: "10px", marginTop: "-10px" }}>
+                      City
+                    </div>
+                    <div className={"drop_down_block"}>
+                      <div className={"element"}>
+                        <TextInput
+                          placeholder={
+                            this.props.placeholder ? "Arctic Circle" : ""
+                          }
+                          value={this.state.city}
+                          onChange={value => {
+                            this.setState({ city: value });
+                          }}
+                        />
+                      </div>
+                      <div
+                        className={"element"}
+                        style={{ marginTop: "5px", marginBottom: "5px" }}
+                      >
+                        <select
+                          placeholder={this.props.placeholder ? "Missoula" : ""}
+                          defaultValue={"Missoula"}
+                          class="form-control"
+                          onChange={e => {
+                            this.setState({
+                              city: e.target.value
+                            });
+                          }}
+                        >
+                          {dropDownCityOptions(this.state.state)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      marginRight: "10px",
+                      marginTop: "10px",
+                      width: "20%"
+                    }}
+                  >
+                    <div style={{ marginBottom: "10px", marginTop: "-10px" }}>
+                      State
+                    </div>
+                    <div className={"drop_down_block"}>
+                      <div className={"element"}>
+                        <TextInput
+                          value={this.state.state}
+                          onChange={value => {
+                            this.setState({ state: value });
+                          }}
+                        />
+                      </div>
+                      <div
+                        className={"element"}
+                        style={{ marginTop: "5px", marginBottom: "5px" }}
+                      >
+                        <select
+                          placeholder={this.props.placeholder ? "MT" : ""}
+                          defaultValue={"MT"}
+                          class="form-control"
+                          onChange={e => {
+                            this.setState({
+                              state: e.target.value
+                            });
+                          }}
+                        >
+                          {dropDownStateOptions}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ width: "20%" }}>
+                    <TextInput
+                      label="Zip Code"
+                      placeholder={this.props.placeholder ? "01234" : ""}
+                      value={this.state.zip}
+                      onChange={value => {
+                        this.setState({ zip: value });
+                      }}
+                    />
+                  </div>
+                </div>
                 <TextInput
                   label="Phone Number"
-                  placeholder=""
+                  placeholder={this.props.placeholder ? "(012) 345-6789" : ""}
                   value={this.state.phoneNumber}
                   onChange={value => {
-                    this.setState({ phoneNumber: value });
+                    this.setState({
+                      phoneNumber: this.formatPhone(
+                        value,
+                        this.state.phoneNumber
+                      )
+                    });
                   }}
                 />
                 <TextInput
                   label="Purpose"
-                  placeholder=""
+                  placeholder={this.props.placeholder ? "Penguins" : ""}
                   value={this.state.purpose}
                   onChange={value => {
                     this.setState({ purpose: value });
@@ -512,12 +851,6 @@ class CardEditor extends Component {
         </div>
       </div>
     );
-  }
-}
-
-class Printer extends Component {
-  render() {
-    return <div />;
   }
 }
 

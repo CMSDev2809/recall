@@ -8,21 +8,40 @@ import { actions } from "./component.js";
 import fns from "../../fns";
 import "./admin.css";
 
-class Admin extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
+import Accounts from "./accounts";
 
-  componentDidMount() {}
+class Admin extends Component {
+  state = {
+    panel: <div />
+  };
+
+  async setPanel(categ) {
+    switch (categ) {
+      case "accounts":
+        this.setState({ panel: <Accounts /> });
+        return;
+      default:
+        this.setState({ panel: <Accounts /> });
+    }
+  }
 
   render() {
     return (
-      <div className="box" style={{ marginTop: "35px" }}>
-        <header className="toolbar toolbar-header">
-          <h1 className="title">Admin Functions</h1>
-        </header>
-        <div className="padded">Hello</div>
+      <div>
+        <div className="box" style={{ marginTop: "35px" }}>
+          <header className="toolbar toolbar-header">
+            <h1 className="title">Admin Functions</h1>
+          </header>
+          <div className={"admin"}>
+            <button
+              className="btn btn-large btn-primary"
+              onClick={() => this.setPanel("accounts")}
+            >
+              User Accounts
+            </button>
+          </div>
+        </div>
+        {this.state.panel}
       </div>
     );
   }

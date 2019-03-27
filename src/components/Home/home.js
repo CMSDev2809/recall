@@ -12,7 +12,8 @@ class Home extends Component {
     this.state = {
       username: "",
       password: "",
-      status: ""
+      status: "",
+      se: <div />
     };
   }
 
@@ -55,7 +56,6 @@ class Home extends Component {
   default() {
     return (
       <div className="home">
-        <h1>Recall</h1>
         <div className="box">
           <div className={"colored-background"}>
             <div className="padded">
