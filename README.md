@@ -10,10 +10,12 @@ Recall is a Windows program used to store encrypted client financial card data o
 
 ## Server Setup
 - Step 1: Install [Node.js](https://nodejs.org/en/download/) on target system.
-- Step 2: Download 'server' file from this project.
-- Step 3: Navigate to server directory on target system via command line or terminal session.
-- Step 4: In root directory run command 'npm install' to install all dependancies from associated 'package.json'.
-- Step 5: Run command 'node index.js' to launch server. Server will be running on port 8081 by default.
+- Step 2: Install [MongoDB](https://www.npmjs.com/package/mongodb) by running command npm install mongodb.
+- Step 3: Run command mongod enable middle-ware between server and MonboDB.
+- Step 4: Download 'server' file from this project.
+- Step 5: Navigate to server directory on target system via command line or terminal session.
+- Step 6: In root directory run command 'npm install' to install all dependancies from associated 'package.json'.
+- Step 7: Run command 'node index.js' to launch server. Server will be running on port 8081 by default.
 
 Your back end server should now be up and running!
 
