@@ -1,6 +1,6 @@
 # Recall
 
-Program used to store client financial card data in a secure server.
+Program used to store encrypted client financial card data in on a secure server.
 
 ![Screenshot](recall.png)
 ![Screenshot](recall_1.png)
