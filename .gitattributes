@@ -83,3 +83,4 @@ AUTHORS text
 builds filter=lfs diff=lfs merge=lfs -text
 release-builds filter=lfs diff=lfs merge=lfs -text
 . filter=lfs diff=lfs merge=lfs -text
+release-builds/electron-tutorial-app-win32-ia32/resources/app.asar filter=lfs diff=lfs merge=lfs -text
