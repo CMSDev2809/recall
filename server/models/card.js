@@ -89,6 +89,10 @@ const cardSchema = new Schema({
   lastAccess: {
     type: String,
     required: false
+  },
+  isAutoPay: {
+    type: Boolean,
+    required: false
   }
 });
 

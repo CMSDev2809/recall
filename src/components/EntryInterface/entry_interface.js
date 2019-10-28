@@ -4,6 +4,8 @@ import config from "electron-json-config";
 import { Prompt, Link } from "react-router-dom";
 import * as deepEqual from "deep-equal";
 import { TextInput, SelectBox, resetUID } from "../inputs.js";
+import { GridLoader } from "react-spinners";
+import Modal from "react-awesome-modal";
 import { components, history, store } from "../components.js";
 import { actions } from "./component.js";
 import dropDownStateOptions from "./drop_down_state_options";
@@ -69,7 +71,8 @@ class EntryInterface extends Component {
           <CardEditor
             placeholder={this.state.placeholder}
             setEditorState={(activePane, editorState) =>
-              this.setEditorState(activePane, editorState)}
+              this.setEditorState(activePane, editorState)
+            }
             editorState={this.state.editorState}
             history={this.props}
           />
@@ -77,13 +80,15 @@ class EntryInterface extends Component {
           <CardEditor
             placeholder={this.state.placeholder}
             setEditorState={(activePane, editorState) =>
-              this.setEditorState(activePane, editorState)}
+              this.setEditorState(activePane, editorState)
+            }
             history={this.props}
           />
         ) : (
           <Search
             setEditorState={(activePane, editorState) =>
-              this.setEditorState(activePane, editorState)}
+              this.setEditorState(activePane, editorState)
+            }
           />
         )}
       </div>
@@ -97,10 +102,11 @@ class Pagination extends Component {
       <p>
         {this.props.totalSize > 0
           ? `Displaying results ${this.props.searchIndex + 1} -
-              ${this.props.searchIndex + this.props.limit > this.props.totalSize
-                ? this.props.totalSize
-                : this.props.searchIndex + this.props.limit} of ${this.props
-              .totalSize}`
+              ${
+                this.props.searchIndex + this.props.limit > this.props.totalSize
+                  ? this.props.totalSize
+                  : this.props.searchIndex + this.props.limit
+              } of ${this.props.totalSize}`
           : ``}
       </p>
     );
@@ -155,7 +161,8 @@ class Search extends Component {
                 card.processing.length > 0 ? "list_item-void" : "list_item"
               }
               onClick={() =>
-                card.processing.length > 0 ? null : this.selectCard(card)}
+                card.processing.length > 0 ? null : this.selectCard(card)
+              }
             >
               <span className="icon icon-user pull-left" />
               <div className="media-body">
@@ -332,13 +339,58 @@ class CardEditor extends Component {
       notes: "",
       processing: "",
       contactEmail: "",
-      receiptEmail: 0
+      receiptEmail: 0,
+      isAutopay: false,
+      modal: {
+        success: false,
+        status: false,
+        waiting: true,
+        code: ""
+      }
     };
     this.state = this.stateObject;
   }
 
   resetState() {
     this.setState(this.stateObject);
+  }
+
+  async submitTransaction() {
+    const modal = await new Promise((resolve, reject) => {
+      fetch(
+        `https://compliancemon.herokuapp.com/api/proccessPayment?ccnum=${
+          this.state.cardNumber
+        }&amount=${parseFloat(
+          this.state.amount.replace("$", "")
+        )}&expDate=${this.state.expDate.replace(/\//g, "")}&cvc=${
+          this.state.securityCode
+        }&email=${this.state.contactEmail}&clientFirstName=${
+          this.state.firstName
+        }&clientMiddleInitial=${""}&clientLastName=${
+          this.state.lastName
+        }&invoiceNumber=${""}&program=${""}&billingAddress=${
+          this.state.billingAddress
+        }&cardHolder=${this.state.cardHolder}`
+      )
+        .then(res => res.json())
+        .then(res => {
+          resolve({
+            status: true,
+            waiting: false,
+            code: res.code,
+            success: res.success
+          });
+        });
+      setTimeout(() => {
+        resolve({
+          status: true,
+          waiting: false,
+          code: "The request timed out",
+          success: res.success
+        });
+      }, 14000);
+    });
+    this.setState({ modal });
   }
 
   componentDidMount() {
@@ -367,7 +419,8 @@ class CardEditor extends Component {
           : "",
         receiptEmail: this.props.editorState.receiptEmail
           ? this.props.editorState.receiptEmail
-          : 0
+          : 0,
+        isAutopay: this.props.editorState.isAutopay
       });
     } else {
       this.resetState();
@@ -452,30 +505,57 @@ class CardEditor extends Component {
     return (
       <div className="entry_interface">
         <div className="content">
+          <Modal
+            visible={this.state.modal.status}
+            width="50%"
+            height="45%"
+            effect="fadeInUp"
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)"
+              }}
+            >
+              {this.state.modal.waiting ? (
+                <GridLoader
+                  sizeUnit={"px"}
+                  size={25}
+                  color={"rgb(190, 0, 74)"}
+                  loading={true}
+                />
+              ) : (
+                <center>
+                  {this.state.modal.success ? (
+                    <div className="icon icon-check" />
+                  ) : (
+                    <div className="icon icon-cancel" />
+                  )}
+                  <h1>{this.state.modal.code}</h1>
+                  <button
+                    style={{ width: 325, height: 62.5 }}
+                    className="button"
+                    onClick={() => {
+                      let modal = this.state.modal;
+                      modal.status = false;
+                      this.setState({ modal });
+                      if (this.state.modal.success === true) {
+                        fns.updateCard(this.state.id, { processing: "" });
+                        this.props.setEditorState("search", {});
+                        this.props.history.push("/tasks");
+                      }
+                    }}
+                  >
+                    <h2>Finish</h2>
+                  </button>
+                </center>
+              )}
+            </div>
+          </Modal>
           <div className="button_container">
-            {this.state.processing.length > 0 ? (
-              <button
-                className="button"
-                onClick={() => {
-                  if (window.confirm("Finish processing and mark completed?")) {
-                    if (
-                      parseInt(this.state.receiptEmail) &&
-                      this.state.contactEmail.length
-                    ) {
-                      fns.sendReceipt(this.state);
-                    }
-                    fns.updateCard(this.state.id, { processing: "" });
-                    this.props.setEditorState("search", {});
-                    this.props.history.push("/tasks");
-                  }
-                }}
-              >
-                <div className="icon-checkmark">
-                  <div className="icon icon-check" />
-                </div>
-                <div>Mark Completed</div>
-              </button>
-            ) : (
+            {this.state.processing.length > 0 ? null : (
               <div>
                 <button
                   className="button"
@@ -563,6 +643,37 @@ class CardEditor extends Component {
                 </button>
               </div>
             )}
+            {this.state.processing.length > 0 ? (
+              <button
+                ref={buttonDOM => {
+                  this.buttonDOM = buttonDOM;
+                }}
+                className="button"
+                onClick={() => {
+                  console.log(this.state);
+                  if (
+                    window.confirm(
+                      `You are about to charge this card for ${this.state.amount}. Proceed?`
+                    )
+                  ) {
+                    this.buttonDOM.blur();
+                    let modal = this.state.modal;
+                    modal.status = true;
+                    modal.waiting = true;
+                    this.setState({ modal });
+                    this.submitTransaction();
+                  }
+                }}
+              >
+                <div
+                  className="icon-priority"
+                  style={{ marginBottom: "-15px" }}
+                >
+                  <div className="icon icon-qq" />
+                </div>
+                <div>Process Card</div>
+              </button>
+            ) : null}
             <button
               className="button"
               onClick={async () => {
@@ -583,6 +694,34 @@ class CardEditor extends Component {
               <div>Save / Update</div>
             </button>
             <components.Printer data={this.state} />
+            {this.state.processing.length > 0 ? (
+              <button
+                className="button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Finish processing and mark completed WITHOUT running? This will return the current card to the selection pool."
+                    )
+                  ) {
+                    if (
+                      parseInt(this.state.receiptEmail) &&
+                      this.state.contactEmail.length
+                    ) {
+                      fns.sendReceipt(this.state);
+                    }
+                    fns.updateCard(this.state.id, { processing: "" });
+                    this.props.setEditorState("search", {});
+                    this.props.history.push("/tasks");
+                  }
+                }}
+              >
+                <div className="icon-checkmark">
+                  <div className="icon icon-check" />
+                </div>
+                <div>Mark Completed</div>
+              </button>
+            ) : null}
+
             <button
               className="button"
               onClick={() => this.resetState(this.stateObject)}
@@ -600,7 +739,9 @@ class CardEditor extends Component {
                   Card Information{" "}
                   {this.state.processing.length > 0
                     ? "(Tasks)"
-                    : this.state.id.length > 0 ? "(Edit)" : "(Create)"}
+                    : this.state.id.length > 0
+                    ? "(Edit)"
+                    : "(Create)"}
                 </h1>
               </header>
               <div className="padded">
@@ -702,7 +843,8 @@ class CardEditor extends Component {
                                   this.state.amount.replace("$", "")
                                 ).toFixed(2)
                             })
-                          : this.setState({ amount: "" })}
+                          : this.setState({ amount: "" })
+                      }
                     />
                   </div>
                 </div>
@@ -827,6 +969,20 @@ class CardEditor extends Component {
                     });
                   }}
                 />
+                <input
+                  type="checkbox"
+                  name="vehicle1"
+                  value="Bike"
+                  onChange={value => {
+                    console.log(value);
+                    this.setState({
+                      isAutopay: value
+                    });
+                  }}
+                />
+                <div style={{ marginLeft: "5px", display: "inline-flex" }}>
+                  Is Autopay?
+                </div>
                 <TextInput
                   label="Purpose"
                   placeholder={this.props.placeholder ? "Penguins" : ""}

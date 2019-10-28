@@ -90,23 +90,25 @@ class Tasks extends Component {
         {this.state.hits.length >= 0 ? (
           <div className={"bttn-block"}>
             <components.Printer batch={true} data={this.state.cards} />
-            <button
-              className="button"
-              onClick={() => {
-                if (window.confirm("Mark all cards as completed?")) {
-                  this.state.cards.map(index => {
-                    fns.sendReceipt(index);
-                    fns.updateCard(index.id, { processing: "" });
-                  });
-                  this.find();
-                }
-              }}
-            >
-              <div className="icon-checkmark">
-                <div className="icon icon-check" />
-              </div>
-              <div>Complete All</div>
-            </button>
+            {false === true ? (
+              <button
+                className="button"
+                onClick={() => {
+                  if (window.confirm("Mark all cards as completed?")) {
+                    this.state.cards.map(index => {
+                      fns.sendReceipt(index);
+                      fns.updateCard(index.id, { processing: "" });
+                    });
+                    this.find();
+                  }
+                }}
+              >
+                <div className="icon-checkmark">
+                  <div className="icon icon-check" />
+                </div>
+                <div>Complete All</div>
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -127,6 +129,9 @@ const Tasks_mapDispatchToProps = dispatch => {
   };
 };
 
-Tasks = connect(Tasks_mapStateToProps, Tasks_mapDispatchToProps)(Tasks);
+Tasks = connect(
+  Tasks_mapStateToProps,
+  Tasks_mapDispatchToProps
+)(Tasks);
 
 export default Tasks;
